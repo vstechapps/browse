@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Debugger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #toolbar {
+      display: flex;
+      align-items: center;
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    #toolbar button, #toolbar input {
+      margin-right: 10px;
+    }
+    #toolbar input {
+      flex: 1;
+      padding: 5px;
+    }
+    #content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    #iframe-container {
+      flex: 2;
+      border-right: 1px solid #ccc;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #debug-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #debug-panel textarea {
+      flex: 1;
+      margin: 0;
+      border: none;
+      padding: 10px;
+      background: #f9f9f9;
+      resize: none;
+    }
+    #debug-panel textarea[readonly] {
+      overflow-y: scroll;
+    }
+    #network-tab {
+      flex: 1;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="backward">Backward</button>
+    <button id="forward">Forward</button>
+    <button id="reload">Reload</button>
+    <input type="text" id="urlInput" placeholder="Enter URL" />
+    <button id="go">Go</button>
+  </div>
+  <div id="content">
+    <div id="iframe-container">
+      <iframe id="iframe" src="about:blank"></iframe>
+    </div>
+    <div id="debug-panel">
+      <textarea id="htmlSource" readonly placeholder="HTML Source Code"></textarea>
+      <div id="network-tab" placeholder="Network Tab">
+        <strong>XHR Calls:</strong>
+        <ul id="xhrList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const iframe = document.getElementById('iframe');
+    const urlInput = document.getElementById('urlInput');
+    const htmlSource = document.getElementById('htmlSource');
+    const xhrList = document.getElementById('xhrList');
+
+    // Toolbar buttons
+    document.getElementById('backward').addEventListener('click', () => iframe.contentWindow.history.back());
+    document.getElementById('forward').addEventListener('click', () => iframe.contentWindow.history.forward());
+    document.getElementById('reload').addEventListener('click', () => iframe.contentWindow.location.reload());
+    document.getElementById('go').addEventListener('click', () => loadIframe(urlInput.value));
+
+    function loadIframe(url) {
+      iframe.src = url;
+    }
+
+    iframe.addEventListener('load', () => {
+      try {
+        htmlSource.value = iframe.contentDocument.documentElement.outerHTML;
+      } catch (error) {
+        htmlSource.value = "Unable to access HTML source (CORS policy).";
+      }
+    });
+
+    // Capture XHR requests
+    const originalXhrOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
+      originalXhrOpen.apply(this, arguments);
+      const li = document.createElement('li');
+      li.textContent = `${method}: ${url}`;
+      xhrList.appendChild(li);
+    };
+  </script>
+</body>
+</html>
